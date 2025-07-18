@@ -40,3 +40,13 @@ def request_llm(prompt: str, api_key: str = None) -> str:
         if code in error_map:
             return f"错误码 {code}：{error_map[code]}"
         return f"调用失败，错误信息：{str(e)}"
+
+# 示例用法
+if __name__ == "__main__":
+    prompt = "What's the highest mountain in the world?"
+    assistant_msg = request_llm(prompt)
+    print(f"Assistant: {assistant_msg}")
+
+    prompt = "What is the second?"
+    assistant_msg = request_llm(prompt)
+    print(f"Assistant: {assistant_msg}")
