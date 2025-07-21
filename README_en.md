@@ -73,3 +73,4 @@ ETF historical data will be fetched automatically, momentum indicators calculate
 
 My QQ: 1105793864  
 If you have any questions or suggestions, please submit an Issue or contact the project maintainer.
+thank you!
