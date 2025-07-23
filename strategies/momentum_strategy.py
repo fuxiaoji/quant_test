@@ -1,18 +1,13 @@
-import akshare as ak
 import numpy as np
 import pandas as pd
 from datetime import datetime
-import matplotlib.pyplot as plt
-import quantstats as qs
-from plot_nav import plot_nav  # 保证已导入
-from report_detail import report_detail
+from data_manager import get_etf_data
+from quant_part.plot_nav import plot_nav
+from quant_part.report_detail import report_detail
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
-from plot_nav import plot_nav
-from etf_data import fetch_etf_data
 
-
-class ETFMomentumStrategy:
+class MomentumStrategy:
     def __init__(self, pool_list, etf_names, start_date, end_date, N=20):
         self.pool_list = pool_list
         self.etf_names = etf_names
@@ -23,11 +18,10 @@ class ETFMomentumStrategy:
         self.name_list = pool_list
 
     def fetch_data(self):
-        self.data = fetch_etf_data(self.pool_list, self.etf_names, self.start_date, self.end_date)
+        self.data = get_etf_data(self.pool_list, self.etf_names, self.start_date, self.end_date)
         if self.data is None:
             exit()
 
-    # 计算强弱得分 (Calculate momentum score for strength/weakness)
     def calculate_score(self, srs, N=25):
         if srs.shape[0] < N:
             return np.nan
@@ -43,8 +37,6 @@ class ETFMomentumStrategy:
         score = 10000 * slope * r_squared
         return score
 
-
-
     def show_latest_momentum(self):
         momentum_cols = ['涨幅_'+v for v in self.name_list]
         latest_momentum = self.data[momentum_cols].iloc[-1]
@@ -59,11 +51,9 @@ class ETFMomentumStrategy:
             print(f"{etf_code}({etf_name}): {latest_momentum[col]:.4f} ({latest_momentum[col]*100:.2f}%)")
 
     def calculate_momentum(self):
-        # 斜率计算长度
         N = self.N if hasattr(self, 'N') else 25
         for name in self.name_list:
             self.data['日收益率_'+name] = self.data[name] / self.data[name].shift(1) - 1.0
-            # 动量涨幅窗口与斜率窗口一致
             self.data['涨幅_'+name] = self.data[name] / self.data[name].shift(N) - 1.0
             self.data['得分_'+name] = self.data[name].rolling(N).apply(lambda x: self.calculate_score(x, N))
         relevant_cols = ['得分_'+v for v in self.name_list] + ['涨幅_'+v for v in self.name_list]
@@ -85,20 +75,4 @@ class ETFMomentumStrategy:
         self.data['轮动策略净值'] = (1.0 + self.data['轮动策略日收益率']).cumprod()
 
     def show_results(self):
-        # 只保留这一行，详细回测分析全部交给 report_detail
-        report_detail(self.data, self.pool_list, self.etf_names)
-
-
-
-if __name__ == "__main__":
-    pool_list = ['510300','510880', '159915', '513100', '518880']
-    etf_names = ['沪深300ETF', '红利ETF','创业板ETF','纳指ETF', '黄金ETF']
-    start_date = '20250101'
-    end_date = datetime.now().strftime('%Y%m%d')
-    strategy = ETFMomentumStrategy(pool_list, etf_names, start_date, end_date, N=20)
-    strategy.fetch_data()
-    strategy.calculate_momentum()
-    strategy.show_latest_momentum()
-    strategy.run_strategy()
-    strategy.show_results()
-    plot_nav(strategy.data, strategy.name_list, etf_names) # 传入etf_names，图例显示
+        report_detail(self.data, self.pool_list, self.etf_names) 
